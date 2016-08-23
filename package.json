@@ -30,9 +30,10 @@
   "dependencies": {
     "async": "*",
     "betfair-emulator": "*",
+    "browser-process-hrtime": "^0.1.2",
+    "lodash": "*",
     "node-uuid": "*",
-    "querystring": "*",
-    "lodash": "*"
+    "querystring": "*"
   },
   "optional": false,
   "devDependencies": {

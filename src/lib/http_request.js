@@ -7,6 +7,7 @@ const url = require('url');
 const zlib = require('zlib');
 const Stream = require('stream');
 const _ = require('lodash');
+const hrtime = require('browser-process-hrtime');
 
 const cookieJar = require('./cookie_jar.js');
 
@@ -116,7 +117,7 @@ class HttpRequest extends Stream {
         if (this.method === 'post') {
             request.write(this.options.requestBody);
         }
-        this.startTime = process.hrtime();
+        this.startTime = hrtime();
         request.end();
     }
 
@@ -128,7 +129,7 @@ class HttpRequest extends Stream {
     // http(s) end of chunk data
     end() {
         // duration
-        this.endTime = process.hrtime();
+        this.endTime = hrtime();
         let start = this.startTime[0] + (this.startTime[1] / NANOSECONDS_IN_SECOND);
         let end = this.endTime[0] + (this.endTime[1] / NANOSECONDS_IN_SECOND);
 
