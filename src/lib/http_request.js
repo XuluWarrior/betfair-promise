@@ -92,7 +92,7 @@ class HttpRequest extends Stream {
             });
 
             // http request input to self output
-            if (result.headers['content-encoding'] === 'gzip') {
+            if (!window && result.headers['content-encoding'] === 'gzip') {
                 // piping through gzip
                 let gunzip = zlib.createGunzip();
                 result.pipe(gunzip).pipe(this);
