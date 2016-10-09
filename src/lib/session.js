@@ -151,24 +151,30 @@ class BetfairSession {
         })
     }
 
-// Arbitrary Betfair API RPC call constructor
-createMethod(api, methodName) {
-    return function(params) {
-        return new Promise((resolve, reject) => {
+    // Arbitrary Betfair API RPC call constructor
+    createMethod(api, methodName) {
+        return function(params) {
+            return new Promise((resolve, reject) => {
                 if (!_.isObject(params)) {
-            return reject('params should be object');
+                    return reject('params should be object');
+                }
+                let invocation = new BetfairInvocation(api, this.sessionKey, methodName, params);
+                invocation.execute((err, result) => {
+                    //console.log(methodName, 'error', err, 'result', result);
+                    if (err) {
+                        return reject(err);
+                    } else if (result.error) {
+                        if (result.error.data && result.error.data.APINGException) {
+                            return reject(result.error.data.APINGException);
+                        } else {
+                            return reject(result.error.message);
+                        }
+                    }
+                    return resolve(result.response.result);
+                });
+            });
         }
-        let invocation = new BetfairInvocation(api, this.sessionKey, methodName, params);
-        invocation.execute((err, result) => {
-            //console.log(methodName, 'error', err, 'result', result);
-            if (err) {
-            return reject(err);
-        }
-        return resolve(result.response.result);
-    });
-});
-}
-}
+    }
 }
 
 module.exports = BetfairSession;
