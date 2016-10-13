@@ -132,6 +132,10 @@ class BetfairSession {
         });
     }
 
+    continueSession(sessionKey) {
+        this.sessionKey = sessionKey;
+    }
+
     keepAlive(cb = ()=> {}) {
         auth.keepAlive(this.sessionKey, (err, res) => {
             cb(err, res);
