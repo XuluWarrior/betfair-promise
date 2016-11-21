@@ -1,8 +1,107 @@
 // (C) 2016 Anton Zemlyanov, rewritten in JavaScript 6 (ES6)
 'use strict';
 
-const http = require('http');
-const https = require('https');
+const inBrowser = (typeof window !== 'undefined');
+const useCordovaHttp = inBrowser && window.cordovaHTTP;
+//var Stream = require('stream');
+
+function fromQueryString(queryString) {
+    const parts = queryString.split("&");
+    const queries = {};
+    parts.forEach((part) => {
+        const [key,value] = part.split("=");
+        queries[decodeURIComponent(key)] = decodeURIComponent(value);
+    });
+    return queries;
+}
+
+function CordovaResponse(res) {
+    this.res = res;
+    this.statusCode = res.status;
+    this.headers = {};
+    Object.keys(res.headers).forEach((key) => {
+        this.headers[key.toLowerCase()] = res.headers[key];
+    });
+    this.dataCallback = null;
+
+    this.on = function(event, callback) {
+        switch (event) {
+            case "data":
+                this.dataCallback = callback;
+                break;
+            case "error":
+                // It's too late for an error.  Ignore
+        }
+    };
+
+    this.pipe = function(out) {
+        this.dataCallback && this.dataCallback(this.res.data);
+        const stream = new Stream();
+        stream.readable = true;
+        stream.pipe(out);
+        stream.emit("data", this.res.data);
+        stream.emit("end");
+
+    }
+}
+const CordovaRequest = function(protocol, httpOptions, callback) {
+
+    this.protocol = protocol;
+    this.defaultPort = protocol === "http" ? 80 : 443;
+    this.httpOptions = httpOptions;
+    this.resultCallback = (res) => {
+        const result = new CordovaResponse(res);
+        callback(result);
+    };
+    this.errorCallback = null;
+    this.queryData = {};
+
+    this.on = function(event, callback) {
+        switch (event) {
+            case "error":
+                this.errorCallback = (error) => {
+                    debugger;
+                    callback(error);
+                }
+        }
+    };
+
+    this.setTimeout = function() {
+
+    };
+
+    this.write = function(data) {
+        this.queryData = data; // fromQueryString(data);
+    };
+
+    this.end = function() {
+        const url = this.protocol + "://" + this.httpOptions.host + ":" + (this.httpOptions.port || this.defaultPort) + this.httpOptions.path;
+
+        const headers = Object.assign({}, this.httpOptions.headers);
+        delete headers["content-length"];
+        delete headers["Content-Length"];
+        cordovaHTTP[this.httpOptions.method](
+            url,
+            this.queryData,
+            headers,
+            this.resultCallback,
+            this.errorCallback
+        );
+    }
+};
+
+const CordovaHTTPAgent = function(protocol) {
+    this.protocol = protocol;
+
+
+
+    this.request = function(httpOptions, callback) {
+        return new CordovaRequest(this.protocol, httpOptions, callback);
+    }
+};
+
+const http = useCordovaHttp ? new CordovaHTTPAgent("http") : require('http');
+const https = useCordovaHttp ? new CordovaHTTPAgent("https") : require('https');
 const url = require('url');
 const zlib = require('zlib');
 const Stream = require('stream');
@@ -17,8 +116,8 @@ const NANOSECONDS_IN_SECOND = 1000000000;
 const MAX_REQUEST_TIMEOUT = 15*1000;
 
 const agentParams = {keepAlive: true, maxFreeSockets: 8};
-const httpAgent = new http.Agent(agentParams);
-const httpsAgent = new https.Agent(agentParams);
+const httpAgent = useCordovaHttp ? agentParams : new http.Agent(agentParams);
+const httpsAgent = useCordovaHttp ? agentParams : new https.Agent(agentParams);
 
 class HttpRequest extends Stream {
     // get http request
@@ -92,7 +191,7 @@ class HttpRequest extends Stream {
             });
 
             // http request input to self output
-            if (typeof window === 'undefined' && result.headers['content-encoding'] === 'gzip') {
+            if (!inBrowser && result.headers['content-encoding'] === 'gzip') {
                 // piping through gzip
                 let gunzip = zlib.createGunzip();
                 result.pipe(gunzip).pipe(this);
