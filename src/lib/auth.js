@@ -58,6 +58,10 @@ class BetfairAuth {
                 cb(err);
                 return;
             }
+            if (res.statusCode !== 200) {
+                cb(`${res.statusMessage} (${res.statusCode})`);
+                return;
+            }
             if (res.responseBody.status != 'SUCCESS') {
                 cb(res.responseBody.error);
                 return;
