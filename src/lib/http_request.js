@@ -178,6 +178,7 @@ class HttpRequest extends Stream {
         let request = transport.request(httpOptions, (result) => {
             //console.log("statusCode: ", result.statusCode, "headers: ", result.headers);
             this.statusCode = result.statusCode;
+            this.statusMessage = result.statusMessage;
             this.contentType = result.headers['content-type'];
             this.cookies = result.headers['set-cookie'];
             cookieJar.parse(this.cookies);
@@ -250,6 +251,7 @@ class HttpRequest extends Stream {
 
         this.callback(null, {
             statusCode: this.statusCode,
+            statusMessage: this.statusMessage,
             contentType: this.contentType,
             responseBody: this.responseBody,
             cookies: this.cookies,
