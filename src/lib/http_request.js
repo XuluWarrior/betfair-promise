@@ -1,6 +1,8 @@
 // (C) 2016 Anton Zemlyanov, rewritten in JavaScript 6 (ES6)
 'use strict';
 
+const usingBrowserHttp = typeof window !== 'undefined' && !window.process /* In Node.js/electron */;
+
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -92,7 +94,7 @@ class HttpRequest extends Stream {
             });
 
             // http request input to self output
-            if (typeof window === 'undefined' && result.headers['content-encoding'] === 'gzip') {
+            if (!usingBrowserHttp && result.headers['content-encoding'] === 'gzip') {
                 // piping through gzip
                 let gunzip = zlib.createGunzip();
                 result.pipe(gunzip).pipe(this);
