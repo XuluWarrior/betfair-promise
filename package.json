@@ -1,6 +1,6 @@
 {
   "name": "betfair-promise",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "description": "Betfair JSON API",
   "main": "index.js",
   "private": false,
